@@ -26,7 +26,6 @@ __author__ = 'Konstantinos Drossos -- Tampere University'
 __docformat__ = 'reStructuredText'
 __all__ = ['method']
 
-
 def _decode_outputs(predicted_outputs: MutableSequence[Tensor],
                     ground_truth_outputs: MutableSequence[Tensor],
                     indices_object: MutableSequence[str],
@@ -35,7 +34,6 @@ def _decode_outputs(predicted_outputs: MutableSequence[Tensor],
                     print_to_console: bool) \
         -> Tuple[List[Dict[str, str]], List[Dict[str, str]]]:
     """Decodes predicted output to string.
-
     :param predicted_outputs: Predicted outputs.
     :type predicted_outputs: list[torch.Tensor]
     :param ground_truth_outputs: Ground truth outputs.
@@ -63,7 +61,7 @@ def _decode_outputs(predicted_outputs: MutableSequence[Tensor],
 
     if print_to_console:
         main_logger.info(f'{text_sep}\n{text_sep}\n{text_sep}\n\n')
-
+    index = 1
     for gt_words, b_predictions, f_name in zip(
             ground_truth_outputs, predicted_outputs, file_names):
         predicted_words = softmax(b_predictions, dim=-1).argmax(1)
@@ -84,8 +82,17 @@ def _decode_outputs(predicted_outputs: MutableSequence[Tensor],
         gt_caption = ' '.join(gt_caption)
 
         f_n = f_name.stem.split('.')[0]
-
+        
         if f_n not in f_names:
+            if index<10:
+                f_n='clotho_file_test_000'+str(index)
+            elif index<100:
+                f_n='clotho_file_test_00'+str(index)
+            elif index<1000:
+                f_n='clotho_file_test_0'+str(index)
+            else:
+                f_n='clotho_file_test_'+str(index)
+            index+=1
             f_names.append(f_n)
             captions_pred.append({
                 'file_name': f_n,
@@ -121,14 +128,176 @@ def _decode_outputs(predicted_outputs: MutableSequence[Tensor],
 
     return captions_pred, captions_gt
 
+# def _decode_outputs(predicted_outputs: MutableSequence[Tensor],
+#                     ground_truth_outputs: MutableSequence[Tensor],
+#                     indices_object: MutableSequence[str],
+#                     file_names: MutableSequence[Path],
+#                     eos_token: str,
+#                     print_to_console: bool) \
+#         -> Tuple[List[Dict[str, str]], List[Dict[str, str]]]:
+#     """Decodes predicted output to string.
+#     :param predicted_outputs: Predicted outputs.
+#     :type predicted_outputs: list[torch.Tensor]
+#     :param ground_truth_outputs: Ground truth outputs.
+#     :type ground_truth_outputs: list[torch.Tensor]
+#     :param indices_object: Object to map indices to text (words or chars).
+#     :type indices_object: list[str]
+#     :param file_names: List of ile names used.
+#     :type file_names: list[pathlib.Path]
+#     :param eos_token: End of sequence token to be used.
+#     :type eos_token: str
+#     :param print_to_console: Print captions to console?
+#     :type print_to_console: bool
+#     :return: Predicted and ground truth captions for scoring.
+#     :rtype: (list[dict[str, str]], list[dict[str, str]])
+#     """
+#     caption_logger = logger.bind(is_caption=True, indent=None)
+#     main_logger = logger.bind(is_caption=False, indent=0)
+#     caption_logger.info('Captions start')
+#     main_logger.info('Starting decoding of captions')
+#     text_sep = '-' * 100
 
+#     captions_pred: List[Dict] = []
+#     captions_gt: List[Dict] = []
+#     f_names: List[str] = []
+
+#     if print_to_console:
+#         main_logger.info(f'{text_sep}\n{text_sep}\n{text_sep}\n\n')
+
+#     for gt_words, b_predictions, f_name in zip(
+#             ground_truth_outputs, predicted_outputs, file_names):
+#         predicted_words = softmax(b_predictions, dim=-1).argmax(1)
+
+#         predicted_caption = [indices_object[i.item()]
+#                              for i in predicted_words]
+#         gt_caption = [indices_object[i.item()]
+#                       for i in gt_words]
+
+#         gt_caption = gt_caption[:gt_caption.index(eos_token)]
+#         try:
+#             predicted_caption = predicted_caption[
+#                                 :predicted_caption.index(eos_token)]
+#         except ValueError:
+#             pass
+
+#         predicted_caption = ' '.join(predicted_caption)
+#         gt_caption = ' '.join(gt_caption)
+
+#         f_n = f_name.stem.split('.')[0]
+
+#         if f_n not in f_names:
+#             f_names.append(f_n)
+#             captions_pred.append({
+#                 'file_name': f_n,
+#                 'caption_predicted': predicted_caption})
+#             captions_gt.append({
+#                 'file_name': f_n,
+#                 'caption_1': gt_caption})
+#         else:
+#             for d_i, d in enumerate(captions_gt):
+#                 if f_n == d['file_name']:
+#                     len_captions = len([i_c for i_c in d.keys()
+#                                         if i_c.startswith('caption_')]) + 1
+#                     d.update({f'caption_{len_captions}': gt_caption})
+#                     captions_gt[d_i] = d
+#                     break
+
+#         log_strings = [f'Captions for file {f_name.stem}: ',
+#                        f'\tPredicted caption: {predicted_caption}',
+#                        f'\tOriginal caption: {gt_caption}\n\n']
+
+#         [caption_logger.info(log_string)
+#          for log_string in log_strings]
+
+#         if print_to_console:
+#             [main_logger.info(log_string)
+#              for log_string in log_strings]
+
+#     if print_to_console:
+#         main_logger.info(f'{text_sep}\n{text_sep}\n{text_sep}\n\n')
+
+#     logger.bind(is_caption=False, indent=0).info(
+#         'Decoding of captions ended')
+
+#     return captions_pred, captions_gt
+
+
+# def _do_testing(model: Module,
+#                 settings_data:  MutableMapping[str, Any],
+#                 settings_io:  MutableMapping[str, Any],
+#                 indices_list: MutableSequence[str]) \
+#         -> None:
+#     """Evaluation of an optimized model.
+#     :param model: Model to use.
+#     :type model: torch.nn.Module
+#     :param settings_data: Data settings to use.
+#     :type settings_data: dict
+#     :param indices_list: Sequence with the words of the captions.
+#     :type indices_list: list[str]
+#     """
+#     model.eval()
+#     logger_main = logger.bind(is_caption=False, indent=1)
+
+#     data_path_test = Path(
+#         settings_io['root_dirs']['data'],
+#         settings_io['dataset']['features_dirs']['output'],
+#         settings_io['dataset']['features_dirs']['test'])
+
+#     logger_main.info('Getting test data')
+#     test_data = get_clotho_loader(
+#         settings_io['dataset']['features_dirs']['test'],
+#         is_training=False,
+#         settings_data=settings_data,
+#         settings_io=settings_io)
+#     logger_main.info('Done')
+
+#     text_sep = '-' * 100
+#     starting_text = 'Starting testing on test data'
+
+#     logger_main.info(starting_text)
+#     logger.bind(is_caption=True, indent=0).info(
+#         f'{text_sep}\n{text_sep}\n{text_sep}\n\n')
+#     logger.bind(is_caption=True, indent=0).info(
+#         f'{starting_text}.\n\n')
+
+#     with no_grad():
+#         test_outputs = module_epoch_passing(
+#             data=test_data, module=model,
+#             objective=None, optimizer=None,
+#             epoch=-1,
+#             max_epoch=-1)
+
+#     captions_pred, _ = _decode_outputs(
+#         test_outputs[1],
+#         test_outputs[2],
+#         indices_object=indices_list,
+#         file_names=list(data_path_test.iterdir()),
+#         eos_token='<eos>',
+#         print_to_console=False)
+
+#     # clotho_file_{file_name} to {file_name}.wav
+#     for i, entry in enumerate(captions_pred):
+#         entry['file_name'] = entry['file_name']\
+#             .replace('clotho_file_', '') + '.wav'
+#         captions_pred[i] = entry
+
+#     submission_dir = Path().joinpath(
+#         settings_io['root_dirs']['outputs'],
+#         settings_io['submissions']['submissions_dir'])
+#     submission_dir.mkdir(parents=True, exist_ok=True)
+#     csv_functions.write_csv_file(
+#         captions_pred,
+#         settings_io['submissions']['submission_file'],
+#         submission_dir,
+#         add_timestamp=True)
+
+#     logger_main.info('Testing done')
 def _do_testing(model: Module,
                 settings_data:  MutableMapping[str, Any],
                 settings_io:  MutableMapping[str, Any],
                 indices_list: MutableSequence[str]) \
         -> None:
     """Evaluation of an optimized model.
-
     :param model: Model to use.
     :type model: torch.nn.Module
     :param settings_data: Data settings to use.
@@ -192,14 +361,12 @@ def _do_testing(model: Module,
 
     logger_main.info('Testing done')
 
-
 def _do_evaluation(model: Module,
                    settings_data:  MutableMapping[str, Any],
                    settings_io:  MutableMapping[str, Any],
                    indices_list: MutableSequence[str]) \
         -> None:
     """Evaluation of an optimized model.
-
     :param model: Model to use.
     :type model: torch.nn.Module
     :param settings_data: Data settings to use.
@@ -235,7 +402,9 @@ def _do_evaluation(model: Module,
     with no_grad():
         evaluation_outputs = module_epoch_passing(
             data=validation_data, module=model,
-            objective=None, optimizer=None)
+            objective=None, optimizer=None,
+            epoch=-1,
+            max_epoch=-1)
 
     captions_pred, captions_gt = _decode_outputs(
         evaluation_outputs[1],
@@ -265,7 +434,6 @@ def _do_training(model: Module,
                  indices_list: MutableSequence[str]) \
         -> None:
     """Optimization of the model.
-
     :param model: Model to optimize.
     :type model: torch.nn.Module
     :param settings_training: Training settings to use.
@@ -324,7 +492,9 @@ def _do_training(model: Module,
             objective=objective,
             optimizer=optimizer,
             grad_norm=settings_training['grad_norm']['norm'],
-            grad_norm_val=settings_training['grad_norm']['value'])
+            grad_norm_val=settings_training['grad_norm']['value'],
+            epoch=epoch,
+            max_epoch=settings_training['nb_epochs'])
         objective_output, output_y_hat, output_y, f_names = epoch_output
 
         # Get mean loss of training and print it with logger
@@ -400,7 +570,6 @@ def _do_training(model: Module,
 def _get_nb_output_classes(settings: MutableMapping[str, Any]) \
         -> int:
     """Gets the amount of output classes.
-
     :param settings: Settings to use.
     :type settings: dict
     :return: Amount of output classes.
@@ -424,7 +593,6 @@ def _load_indices_file(settings_files: MutableMapping[str, Any],
                        settings_data: MutableMapping[str, Any]) \
         -> MutableSequence[str]:
     """Loads and returns the indices file.
-
     :param settings_files: Settings of file i/o to be used.
     :type settings_files: dict
     :param settings_data: Settings of data to be used. .
@@ -445,7 +613,6 @@ def _load_indices_file(settings_files: MutableMapping[str, Any],
 def method(settings: MutableMapping[str, Any]) \
         -> None:
     """Baseline method.
-
     :param settings: Settings to be used.
     :type settings: dict
     """
