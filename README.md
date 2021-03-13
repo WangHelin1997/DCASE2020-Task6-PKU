@@ -37,7 +37,7 @@ SPICE|  0.013|  0.102
 SPIDEr|  0.018|  0.196
 
 ## Citation
-If this code is helpful, please feel free to cite the following papers:
+If this code is helpful, please feel free to cite the following paper:
 ```
 @techreport{wang2020_t6,
     Author = "Wang, Helin and Yang, Bang and Zou, Yuexian and Chong, Dading",
