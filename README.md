@@ -2,8 +2,23 @@
 
 A Pytorch implementation of the paper : ["Automated Audio Captioning With Temporal Attention"](http://dcase.community/documents/challenge2020/technical_reports/DCASE2020_Wang_5_t6.pdf)
 
-The basic settings follow the DCASE 2020 baseline system,
-see https://github.com/audio-captioning/dcase-2020-baseline for details.
+The basic settings were following the DCASE 2020 baseline system.
+
+See https://github.com/audio-captioning/dcase-2020-baseline for details.
+
+## Results on the evaluation set
+
+Metric | DCASE 2020 baseline system | Our system
+-|-|-
+BLEU1| 0.389|  0.489
+BLEU2|  0.136|  0.285
+BLEU3|  0.055|  0.177
+BLEU4|  0.015|  0.107
+ROUGEL|  0.262|  0.325
+METEOR|  0.084|  0.148
+CIDEr|  0.074|  0.252
+SPICE|  0.033|  0.091
+SPIDEr|  0.054|  0.172
 
 ## Citation
 If this code is helpful, please feel free to cite the following papers:
