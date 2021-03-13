@@ -12,7 +12,7 @@ from torch.nn.utils import clip_grad_norm_
 from torch.utils.data import DataLoader
 from torch.optim.optimizer import Optimizer
 
-from models import BaselineDCASE
+from models import BaselineDCASE, CNNenc, CNNenc2
 
 __author__ = 'Konstantinos Drossos -- Tampere University'
 __docformat__ = 'reStructuredText'
@@ -59,7 +59,8 @@ def get_model(settings_model: MutableMapping[str, Union[str, MutableMapping]],
 
     kwargs = {**encoder_settings, **decoder_settings}
 
-    model = BaselineDCASE(**kwargs)
+    #model = BaselineDCASE(**kwargs)
+    model = CNNenc2(**kwargs)
 
     if settings_model['use_pre_trained_model']:
         model.load_state_dict(pt_load(Path(
@@ -76,7 +77,9 @@ def module_epoch_passing(data: DataLoader,
                          objective: Union[Callable[[Tensor, Tensor], Tensor], None],
                          optimizer: Union[Optimizer, None],
                          grad_norm: Optional[int] = 1,
-                         grad_norm_val: Optional[float] = -1.) \
+                         grad_norm_val: Optional[float] = -1.,
+                        epoch: Optional[int] = -1,
+                        max_epoch: Optional[int] = -1) \
         -> Tuple[Tensor, List[Tensor], List[Tensor], List[str]]:
     """One full epoch passing.
 
@@ -106,7 +109,7 @@ def module_epoch_passing(data: DataLoader,
     f_names = []
 
     for i, example in enumerate(data):
-        y_hat, y, f_names_tmp = module_forward_passing(example, module)
+        y_hat, y, f_names_tmp = module_forward_passing(example, module, epoch, max_epoch)
         f_names.extend(f_names_tmp)
         y = y[:, 1:]
         try:
@@ -119,18 +122,26 @@ def module_epoch_passing(data: DataLoader,
 
         try:
             y_hat = y_hat[:, :y.size()[1], :]
-            loss = objective(y_hat.contiguous().view(-1, y_hat.size()[-1]),
-                             y.contiguous().view(-1))
+            cap_lens = []
+            for bsz in range(y.shape[0]):
+                len_count = 1
+                for count in range(y.shape[1]):
+                    if y[bsz,count]!=9:
+                        len_count+=1
+                cap_lens.append(len_count)
 
+            import torch
+            output_caps = torch.cat([y_hat[j][:cap_lens[j]] for j in range(y.shape[0])],0)
+            target_caps = torch.cat([y[j][:cap_lens[j]] for j in range(y.shape[0])],0)
+            loss = objective(output_caps.view(-1, y_hat.size()[-1]),
+                             target_caps.view(-1))
+            
             if has_optimizer:
-                optimizer.zero_grad()
-                loss.backward()
-                
                 if grad_norm_val > -1:
                     clip_grad_norm_(module.parameters(),
                                     max_norm=grad_norm_val,
                                     norm_type=grad_norm)
-                    
+                loss.backward()
                 optimizer.step()
 
             objective_output[i] = loss.cpu().item()
@@ -142,7 +153,9 @@ def module_epoch_passing(data: DataLoader,
 
 
 def module_forward_passing(data: MutableSequence[Tensor],
-                           module: Module) \
+                           module: Module,
+                          epoch: Optional[int] = -1,
+                          max_epoch: Optional[int] = -1) \
         -> Tuple[Tensor, Tensor, List[str]]:
     """One forward passing of the module.
 
@@ -159,6 +172,6 @@ def module_forward_passing(data: MutableSequence[Tensor],
     device = next(module.parameters()).device
     x, y, f_names = [i.to(device) if isinstance(i, Tensor)
                      else i for i in data]
-    return module(x), y, f_names
+    return module(x,y,epoch,max_epoch), y, f_names
 
 # EOF
