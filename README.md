@@ -1,6 +1,6 @@
 # Audio captioning DCASE 2020 system by PKU team
 
-A Pytorch implementation of the paper : ["Automated Audio Captioning With Temporal Attention"](http://dcase.community/documents/challenge2020/technical_reports/DCASE2020_Wang_5_t6.pdf)
+A Pytorch implementation of the technical report : ["Automated Audio Captioning With Temporal Attention"](http://dcase.community/documents/challenge2020/technical_reports/DCASE2020_Wang_5_t6.pdf)
 
 We got the 3rd place in the DCASE2020 challenge.
 
